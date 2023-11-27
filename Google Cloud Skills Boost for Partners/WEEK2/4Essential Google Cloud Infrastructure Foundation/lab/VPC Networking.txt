@@ -1,0 +1,492 @@
+
+
+
+us-west4
+IPv4
+10.182.0.0/20
+
+
+europe-west1
+IPv4
+10.132.0.0/20
+
+
+
+eu:
+i:10.132.0.2
+ex:34.34.141.195
+
+
+VPC Networking
+1 hour 30 minutes
+Free
+Overview
+Google Cloud Virtual Private Cloud (VPC) provides networking functionality to Compute Engine virtual machine (VM) instances, Kubernetes Engine containers, and the App Engine flexible environment. In other words, without a VPC network, you cannot create VM instances, containers, or App Engine applications. Therefore, each Google Cloud project has a default network to get you started.
+
+You can think of a VPC network as similar to a physical network, except that it is virtualized within Google Cloud. A VPC network is a global resource that consists of a list of regional virtual subnetworks (subnets) in data centers, all connected by a global wide area network (WAN). VPC networks are logically isolated from each other in Google Cloud.
+
+In this lab, you create an auto mode VPC network with firewall rules and two VM instances. Then, you convert the auto mode network to a custom mode network and create other custom mode networks as shown in the example network diagram below. You also test connectivity across networks.
+
+VPC Networking Architecture diagram
+
+Objectives
+In this lab, you learn how to perform the following tasks:
+
+Explore the default VPC network
+Create an auto mode network with firewall rules
+Convert an auto mode network to a custom mode network
+Create custom mode VPC networks with firewall rules
+Create VM instances using Compute Engine
+Explore the connectivity for VM instances across VPC networks
+For each lab, you get a new Google Cloud project and set of resources for a fixed time at no cost.
+
+Sign in to Qwiklabs using an incognito window.
+
+Note the lab's access time (for example, 1:15:00), and make sure you can finish within that time.
+There is no pause feature. You can restart if needed, but you have to start at the beginning.
+
+When ready, click Start lab.
+
+Note your lab credentials (Username and Password). You will use them to sign in to the Google Cloud Console.
+
+Click Open Google Console.
+
+Click Use another account and copy/paste credentials for this lab into the prompts.
+If you use other credentials, you'll receive errors or incur charges.
+
+Accept the terms and skip the recovery resource page.
+
+Note: Do not click End Lab unless you have finished the lab or want to restart it. This clears your work and removes the project.
+
+Task 1. Explore the default network
+Each Google Cloud project has a default network with subnets, routes, and firewall rules.
+
+View the subnets
+The default network has a subnet in each Google Cloud region.
+
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click VPC network > VPC networks.
+Notice the default network with its subnets.
+Each subnet is associated with a Google Cloud region and a private RFC 1918 CIDR block for its internal IP addresses range and a gateway.
+View the routes
+Routes tell VM instances and the VPC network how to send traffic from an instance to a destination, either inside the network or outside Google Cloud. Each VPC network comes with some default routes to route traffic among its subnets and send traffic from eligible instances to the internet.
+
+In the left pane, click Routes.
+Notice that there is a route for each subnet and one for the Default internet gateway (0.0.0.0/0).
+These routes are managed for you, but you can create custom static routes to direct some packets to specific destinations. For example, you can create a route that sends all outbound traffic to an instance configured as a NAT gateway.
+View the firewall rules
+Each VPC network implements a distributed virtual firewall that you can configure. Firewall rules allow you to control which packets are allowed to travel to which destinations. Every VPC network has two implied firewall rules that block all incoming connections and allow all outgoing connections.
+
+In the left pane, click Firewall.
+Notice that there are 4 Ingress firewall rules for the default network:
+
+default-allow-icmp
+default-allow-rdp
+default-allow-ssh
+default-allow-internal
+These firewall rules allow ICMP, RDP, and SSH ingress traffic from anywhere (0.0.0.0/0) and all TCP, UDP, and ICMP traffic within the network (10.128.0.0/9). The Targets, Filters, Protocols/ports, and Action columns explain these rules.
+
+Delete the Firewall rules
+In the left pane, click Firewall.
+Select all default network firewall rules.
+Click Delete.
+Click Delete to confirm the deletion of the firewall rules.
+Delete the default network
+In the left pane, click VPC networks.
+Select the default network.
+Click Delete VPC network.
+Click Delete to confirm the deletion of the default network.
+Wait for the network to be deleted before continuing.
+
+In the left pane, click Routes.
+Notice that there are no routes.
+
+In the left pane, click Firewall.
+Notice that there are no firewall rules.
+
+Note: Without a VPC network, there are no routes!
+
+Without a VPC network, you cannot create VM instances, containers, or App Engine applications.
+
+True
+
+False
+
+Try to create a VM instance
+Verify that you cannot create a VM instance without a VPC network.
+
+On the Navigation menu, click Compute Engine > VM instances.
+Click Create Instance.
+Accept the default values and click Create.
+Notice the error.
+
+Click Create Instance.
+Click Advanced options.
+Click Networking. Notice the No more networks available error under Network interfaces.
+Click Cancel.
+Note: As expected, you cannot create a VM instance without a VPC network!
+Task 2. Create an auto mode network
+You have been tasked to create an auto mode network with two VM instances. Auto mode networks are easy to set up and use because they automatically create subnets in each region. However, you don't have complete control over the subnets created in your VPC network, including regions and IP address ranges used.
+
+Feel free to explore in the Google VPC documentation for more considerations for choosing an auto mode network, but for now, assume that you are using the auto mode network for prototyping purposes.
+
+Create an auto mode VPC network with firewall rules
+On the Navigation menu (Navigation menu icon), click VPC network > VPC networks.
+Click Create VPC network.
+For Name, type mynetwork
+For Subnet creation mode, click Automatic.
+Auto mode networks create subnets in each region automatically.
+
+For Firewall rules, select all available rules.
+These are the same standard firewall rules that the default network had. The deny-all-ingress and allow-all-egress rules are also displayed, but you cannot select or disable them because they are implied. These two rules have a lower Priority (higher integers indicate lower priorities) so that the allow ICMP, custom, RDP, and SSH rules are considered first.
+
+Click Create.
+
+When the new network is ready, click mynetwork. Note the IP address range for the subnets in Lab Region and europe-west1.
+
+Note: If you ever delete the default network, you can quickly re-create it by creating an auto mode network as you just did.
+Create a VM instance in Lab Region
+Create a VM instance in the Lab Region region. Selecting a region and zone determines the subnet and assigns the internal IP address from the subnet's IP address range.
+
+On the Navigation menu (Navigation menu icon), click Compute Engine > VM instances.
+
+Click Create Instance.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	mynet-us-vm
+Region	Lab Region
+Zone	Lab Zone
+Series	E2
+Machine type	e2-micro (2 vCPU, 1 GB memory)
+Boot disk	Debian GNU/Linux 11 (bullseye)
+Click Create.
+
+Create a VM instance in europe-west1
+Create a VM instance in the europe-west1 region.
+
+Click Create instance.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	mynet-eu-vm
+Region	europe-west1
+Zone	europe-west1-c
+Series	E2
+Machine type	e2-micro (2 vCPU, 1 GB memory)
+Boot disk	Debian GNU/Linux 11 (bullseye)
+Click Create.
+
+Note: The External IP addresses for both VM instances are ephemeral. If an instance is stopped, any ephemeral external IP addresses assigned to the instance are released back into the general Compute Engine pool and become available for use by other projects.
+
+When a stopped instance is started again, a new ephemeral external IP address is assigned to the instance. Alternatively, you can reserve a static external IP address, which assigns the address to your project indefinitely until you explicitly release it.
+Verify connectivity for the VM instances
+The firewall rules that you created with mynetwork allow ingress SSH and ICMP traffic from within mynetwork (internal IP) and outside that network (external IP).
+
+On the Navigation menu, click Compute Engine > VM instances.
+Note the external and internal IP addresses for mynet-eu-vm.
+
+For mynet-us-vm, click SSH to launch a terminal and connect.
+Note: You can SSH because of the allow-ssh firewall rule, which allows incoming traffic from anywhere (0.0.0.0/0) for tcp:22. The SSH connection works seamlessly because Compute Engine generates an SSH key for you and stores it in one of the following locations:
+By default, Compute Engine adds the generated key to project or instance metadata.
+If your account is configured to use OS Login, Compute Engine stores the generated key with your user account.
+Alternatively, you can control access to Linux instances by creating SSH keys and editing public SSH key metadata.
+To test connectivity to mynet-eu-vm's internal IP, run the following command, replacing mynet-eu-vm's internal IP:
+ping -c 3 <Enter mynet-eu-vm's internal IP here>
+Copied!
+You can ping mynet-eu-vm's internal IP because of the allow-custom firewall rule.
+
+To test connectivity to mynet-eu-vm's external IP, run the following command, replacing mynet-eu-vm's external IP:
+ping -c 3 <Enter mynet-eu-vm's external IP here>
+Copied!
+
+Which firewall rule allows the ping to mynet-eu-vm's external IP address?
+
+mynetwork-allow-custom
+
+mynetwork-allow-ssh
+
+mynetwork-allow-rdp
+
+mynetwork-allow-icmp
+
+Note: You can SSH to mynet-us-vm and ping mynet-eu-vm's internal and external IP addresses as expected. Alternatively, you can SSH to mynet-eu-vm and ping mynet-us-vm's internal and external IP addresses, which also works.
+Convert the network to a custom mode network
+The auto mode network worked great so far, but you have been asked to convert it to a custom mode network so that new subnets aren't automatically created as new regions become available. This could result in overlap with IP addresses used by manually created subnets or static routes, or could interfere with your overall network planning.
+
+On the Navigation menu (Navigation menu icon), click VPC network > VPC networks.
+Click mynetwork to open the network details.
+Click Edit.
+Select Custom for the Subnet creation mode.
+Click Save.
+Return to the VPC networks page.
+Wait for the Mode of mynetwork to change to Custom.
+
+You can click Refresh while you wait.
+
+Click Check my progress to verify the objective.
+Create a VPC network and VM instances
+
+Note: Converting an auto mode network to a custom mode network is an easy task, and it provides you with more flexibility. We recommend that you use custom mode networks in production.
+Task 3. Create custom mode networks
+You have been tasked to create two additional custom networks, managementnet and privatenet, along with firewall rules to allow SSH, ICMP, and RDP ingress traffic and VM instances as shown in this example diagram (with the exception of vm-appliance):
+
+VPC Networking Architecture diagram
+
+Note that the IP CIDR ranges of these networks do not overlap. This allows you to set up mechanisms such as VPC peering between the networks. If you specify IP CIDR ranges that are different from your on-premises network, you could even configure hybrid connectivity using VPN or Cloud Interconnect.
+
+Create the managementnet network
+Create the managementnet network using the Cloud Console.
+
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click VPC network > VPC networks.
+
+Click Create VPC Network.
+
+For Name, type managementnet
+
+For Subnet creation mode, click Custom.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	managementsubnet-us
+Region	Lab Region
+IPv4 range	10.240.0.0/20
+Click Done.
+
+Click Equivalent Command line.
+
+These commands illustrate that networks and subnets can be created using the gcloud command line. You will create the privatenet network using these commands with similar parameters.
+
+Click Close.
+
+Click Create.
+
+Create the privatenet network
+Create the privatenet network using the gcloud command line.
+
+In the Cloud Console, click Activate Cloud Shell (Acitvate Cloud Shell icon).
+If prompted, click Continue.
+To create the privatenet network, run the following command. Click Authorize if prompted.
+gcloud compute networks create privatenet --subnet-mode=custom
+Copied!
+To create the privatesubnet-us subnet, run the following command:
+gcloud compute networks subnets create privatesubnet-us --network=privatenet --region=Lab region --range=172.16.0.0/24
+Copied!
+To create the privatesubnet-eu subnet, run the following command:
+gcloud compute networks subnets create privatesubnet-eu --network=privatenet --region=europe-west1 --range=172.20.0.0/20
+Copied!
+To list the available VPC networks, run the following command:
+gcloud compute networks list
+Copied!
+The output should look like this:
+
+NAME           SUBNET_MODE  BGP_ROUTING_MODE  IPV4_RANGE  GATEWAY_IPV4
+managementnet  CUSTOM       REGIONAL
+mynetwork      CUSTOM       REGIONAL
+privatenet     CUSTOM       REGIONAL
+To list the available VPC subnets (sorted by VPC network), run the following command:
+gcloud compute networks subnets list --sort-by=NETWORK
+Copied!
+Note: The managementnet and privatenet networks only have the subnets that you created because they are custom mode networks. mynetwork is also a custom mode network, but it started out as an auto mode network, resulting in subnets in each region.
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click VPC network > VPC networks.
+Verify that the same networks and subnets are listed in the Cloud Console.
+Create the firewall rules for managementnet
+Create firewall rules to allow SSH, ICMP, and RDP ingress traffic to VM instances on the managementnet network.
+
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click VPC network > Firewall.
+
+Click Create Firewall Rule.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	managementnet-allow-icmp-ssh-rdp
+Network	managementnet
+Targets	All instances in the network
+Source filter	IPv4 Ranges
+Source IPv4 ranges	0.0.0.0/0
+Protocols and ports	Specified protocols and ports
+Note: Make sure to include the /0 in the Source IPv4 ranges to specify all networks.
+Select tcp and specify ports 22 and 3389.
+
+Select Other protocols and specify icmp protocol.
+
+Click Equivalent Command line.
+
+These commands illustrate that firewall rules can also be created using the gcloud command line. You will create the privatenet's firewall rules using these commands with similar parameters.
+
+Click Close.
+
+Click Create.
+
+Create the firewall rules for privatenet
+Create the firewall rules for privatenet network using the gcloud command line.
+
+Return to Cloud Shell. If necessary, click Activate Cloud Shell (Activate Cloud Shell icon).
+To create the privatenet-allow-icmp-ssh-rdp firewall rule, run the following command:
+gcloud compute firewall-rules create privatenet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
+Copied!
+The output should look like this:
+
+NAME                           NETWORK     DIRECTION  PRIORITY  ALLOW                 DENY
+privatenet-allow-icmp-ssh-rdp  privatenet  INGRESS    1000      icmp,tcp:22,tcp:3389
+To list all the firewall rules (sorted by VPC network), run the following command:
+gcloud compute firewall-rules list --sort-by=NETWORK
+Copied!
+The output should look like this:
+
+NAME                              NETWORK        DIRECTION  PRIORITY  ALLOW                        
+managementnet-allow-icmp-ssh-rdp  managementnet  INGRESS    1000      icmp,tcp:22,tcp:3389
+mynetwork-allow-icmp              mynetwork      INGRESS    1000      icmp
+mynetwork-allow-custom            mynetwork      INGRESS    65534     all                         
+mynetwork-allow-rdp               mynetwork      INGRESS    1000      tcp:3389
+mynetwork-allow-ssh               mynetwork      INGRESS    1000      tcp:22
+privatenet-allow-icmp-ssh-rdp     privatenet     INGRESS    1000      icmp,tcp:22,tcp:3389
+The firewall rules for mynetwork network have been created for you. You can define multiple protocols and ports in one firewall rule (privatenet and managementnet) or spread them across multiple rules (default and mynetwork).
+
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click VPC network > Firewall.
+Verify that the same firewall rules are listed in the Cloud Console.
+Click Check my progress to verify the objective.
+Create custom mode VPC networks with firewall rules
+
+Next, create two VM instances:
+
+managementnet-us-vm in managementsubnet-us
+privatenet-us-vm in privatesubnet-us
+Create the managementnet-us-vm instance
+Create the managementnet-us-vm instance using the Cloud Console.
+
+In the Cloud Console, on the Navigation menu (Navigation menu icon), click Compute Engine > VM instances.
+
+Click Create instance.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Name	managementnet-us-vm
+Region	Lab Region
+Zone	Lab Zone
+Series	E2
+Machine type	e2-micro (2 vCPU, 1 GB memory)
+Boot disk	Debian GNU/Linux 11 (bullseye)
+Click Advanced options.
+
+Click Networking.
+
+For Network interfaces, click the dropdown arrow to edit.
+
+Specify the following, and leave the remaining settings as their defaults:
+
+Property	Value (type value or select option as specified)
+Network	managementnet
+Subnetwork	managementsubnet-us
+Note: The subnets available for selection are restricted to those in the selected region.
+Click Done.
+
+Click Equivalent Code.
+
+This illustrates that VM instances can also be created using the gcloud command line. You will create the privatenet-us-vm instance using these commands with similar parameters.
+
+Click Close.
+
+Click Create.
+
+Create the privatenet-us-vm instance
+Create the privatenet-us-vm instance using the gcloud command line.
+
+Return to Cloud Shell. If necessary, click Activate Cloud Shell (Activate Cloud Shell icon).
+To create the privatenet-us-vm instance, run the following command:
+gcloud compute instances create privatenet-us-vm --zone=Lab Zone --machine-type=e2-micro --subnet=privatesubnet-us --image-family=debian-11 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=privatenet-us-vm
+Copied!
+To list all the VM instances (sorted by zone), run the following command:
+gcloud compute instances list --sort-by=ZONE
+Copied!
+In the Cloud Console, on the Navigation menu (Navigation menu), click Compute Engine > VM instances.
+Verify that the VM instances are listed in the Cloud Console.
+
+For Columns, select Zone.
+
+There are three instances in Lab Zone and one instance in europe-west1-c. However, these instances are spread across three VPC networks (managementnet, mynetwork, and privatenet), with no instance in the same zone and network as another. In the next task, you explore the effect this has on internal connectivity.
+
+Click Check my progress to verify the objective.
+Create VM instances
+
+Note: You can explore more networking information on each VM instance by clicking the nic0 link in the Internal IP column. The resulting network interface details page shows the subnet along with the IP CIDR range, the firewall rules and routes that apply to the instance, and other network analysis.
+Task 4. Explore the connectivity across networks
+Explore the connectivity between the VM instances. Specifically, determine the effect of having VM instances in the same zone versus having instances in the same VPC network.
+
+Ping the external IP addresses
+Ping the external IP addresses of the VM instances to determine whether you can reach the instances from the public internet.
+
+In the Cloud Console, on the Navigation menu, click Compute Engine > VM instances.
+Note the external IP addresses for mynet-eu-vm, managementnet-us-vm, and privatenet-us-vm.
+For mynet-us-vm, click SSH to launch a terminal and connect.
+To test connectivity to mynet-eu-vm's external IP, run the following command, replacing mynet-eu-vm's external IP:
+ping -c 3 <Enter mynet-eu-vm's external IP here>
+Copied!
+This should work!
+
+To test connectivity to managementnet-us-vm's external IP, run the following command, replacing managementnet-us-vm's external IP:
+ping -c 3 <Enter managementnet-us-vm's external IP here>
+Copied!
+This should work!
+
+To test connectivity to privatenet-us-vm's external IP, run the following command, replacing privatenet-us-vm's external IP:
+ping -c 3 <Enter privatenet-us-vm's external IP here>
+Copied!
+This should work!
+
+Note: You can ping the external IP address of all VM instances, even though they are in either a different zone or VPC network. This confirms that public access to those instances is only controlled by the ICMP firewall rules that you established earlier.
+Ping the internal IP addresses
+Ping the internal IP addresses of the VM instances to determine whether you can reach the instances from within a VPC network.
+
+
+Which instances should you be able to ping from mynet-us-vm using internal IP addresses?
+
+mynet-eu-vm
+
+managementnet-us-vm
+
+privatenet-us-vm
+
+In the Cloud Console, on the Navigation menu, click Compute Engine > VM instances.
+Note the internal IP addresses for mynet-eu-vm, managementnet-us-vm, and privatenet-us-vm.
+Return to the SSH terminal for mynet-us-vm.
+To test connectivity to mynet-eu-vm's internal IP, run the following command, replacing mynet-eu-vm's internal IP:
+ping -c 3 <Enter mynet-eu-vm's internal IP here>
+Copied!
+Note: You can ping the internal IP address of mynet-eu-vm because it is on the same VPC network as the source of the ping (mynet-us-vm), even though both VM instances are in separate zones, regions, and continents!
+To test connectivity to managementnet-us-vm's internal IP, run the following command, replacing managementnet-us-vm's internal IP:
+ping -c 3 <Enter managementnet-us-vm's internal IP here>
+Copied!
+Note: This should not work, as indicated by a 100% packet loss!
+To test connectivity to privatenet-us-vm's internal IP, run the following command, replacing privatenet-us-vm's internal IP:
+ping -c 3 <Enter privatenet-us-vm's internal IP here>
+Copied!
+Note: This should not work either, as indicated by a 100% packet loss! You cannot ping the internal IP address of managementnet-us-vm and privatenet-us-vm because they are in separate VPC networks from the source of the ping (mynet-us-vm), even though they are all in the same zone.
+Task 5. Review
+In this lab, you explored the default network and determined that you cannot create VM instances without a VPC network. Thus, you created a new auto mode VPC network with subnets, routes, firewall rules, and two VM instances and tested the connectivity for the VM instances. Because auto mode networks aren't recommended for production, you converted the auto mode network to a custom mode network.
+
+Next, you created two more custom mode VPC networks with firewall rules and VM instances using the Cloud Console and the gcloud command line. Then you tested the connectivity across VPC networks, which worked when pinging external IP addresses but not when pinging internal IP addresses.
+
+VPC networks are by default isolated private networking domains. Therefore, no internal IP address communication is allowed between networks, unless you set up mechanisms such as VPC peering or VPN.
+
+End your lab
+When you have completed your lab, click End Lab. Google Cloud Skills Boost removes the resources you’ve used and cleans the account for you.
+
+You will be given an opportunity to rate the lab experience. Select the applicable number of stars, type a comment, and then click Submit.
+
+The number of stars indicates the following:
+
+1 star = Very dissatisfied
+2 stars = Dissatisfied
+3 stars = Neutral
+4 stars = Satisfied
+5 stars = Very satisfied
+You can close the dialog box if you don't want to provide feedback.
+
+For feedback, suggestions, or corrections, please use the Support tab.
+
+Copyright 2022 Google LLC All rights reserved. Google and the Google logo are trademarks of Google LLC. All other company and product names may be trademarks of the respective companies with which they are associated
